@@ -11,7 +11,7 @@ const HandwritingToText = () => {
   const points = useRef([]);
 
   // Replace with your Google Cloud Vision API key
-  const GOOGLE_API_KEY = "AIzaSyB4ergnT8XaZw-eP2nECHh_k1nxaNGyjqM";
+  const VITE_GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -152,10 +152,11 @@ const HandwritingToText = () => {
       // Convert canvas to base64
       const imageData = canvas.toDataURL("image/png").split(",")[1];
 
+      console.log(import.meta.env.VITE_GOOGLE_API_KEY)
       // Prepare the request to Google Cloud Vision API
       debugger
       const response = await fetch(
-        `https://vision.googleapis.com/v1/images:annotate?key=${GOOGLE_API_KEY}`,
+        `https://vision.googleapis.com/v1/images:annotate?key=${VITE_GOOGLE_API_KEY}`,
         {
           method: "POST",
           headers: {
