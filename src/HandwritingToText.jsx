@@ -1,8 +1,9 @@
 import React, { useRef, useState, useEffect } from "react";
-import { Grid3X3 } from "lucide-react";
+import { Grid3X3, Upload } from "lucide-react";
 
 const HandwritingToText = () => {
   const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
   const [text, setText] = useState("");
   const [isDrawing, setIsDrawing] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -10,20 +11,18 @@ const HandwritingToText = () => {
   const [lastPos, setLastPos] = useState({ x: 0, y: 0 });
   const points = useRef([]);
 
-  // Replace with your Google Cloud Vision API key
   const VITE_GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_API_KEY;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
 
-    // Set white background
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // Set drawing styles
     ctx.lineWidth = 4;
     ctx.lineCap = "round";
+    ctx.lineJoin = "round"; // Add this for smoother line joins
     ctx.strokeStyle = "black";
 
     if (showGrid) {
@@ -40,7 +39,6 @@ const HandwritingToText = () => {
     ctx.strokeStyle = "#e5e7eb";
     ctx.lineWidth = 1;
 
-    // Draw vertical lines
     for (let x = gridSize; x < canvas.width; x += gridSize) {
       ctx.beginPath();
       ctx.moveTo(x, 0);
@@ -48,7 +46,6 @@ const HandwritingToText = () => {
       ctx.stroke();
     }
 
-    // Draw horizontal lines
     for (let y = gridSize; y < canvas.height; y += gridSize) {
       ctx.beginPath();
       ctx.moveTo(0, y);
@@ -57,6 +54,15 @@ const HandwritingToText = () => {
     }
 
     ctx.restore();
+  };
+
+  const drawDot = (x, y) => {
+    const canvas = canvasRef.current;
+    const ctx = canvas.getContext("2d");
+    ctx.beginPath();
+    ctx.arc(x, y, ctx.lineWidth / 2, 0, Math.PI * 2);
+    ctx.fillStyle = "black";
+    ctx.fill();
   };
 
   const smoothLine = (points) => {
@@ -100,6 +106,9 @@ const HandwritingToText = () => {
     setIsDrawing(true);
     setLastPos(coords);
     points.current = [coords];
+
+    // Draw a dot at the starting point
+    drawDot(coords.x, coords.y);
   };
 
   const handleMove = (event) => {
@@ -128,7 +137,11 @@ const HandwritingToText = () => {
     setLastPos(coords);
   };
 
-  const handleEnd = () => {
+  const handleEnd = (event) => {
+    if (isDrawing && points.current.length === 1) {
+      // If only one point exists, draw a dot
+      drawDot(lastPos.x, lastPos.y);
+    }
     setIsDrawing(false);
     points.current = [];
   };
@@ -144,17 +157,43 @@ const HandwritingToText = () => {
     setText("");
   };
 
+  const handleImageUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = canvasRef.current;
+          const ctx = canvas.getContext("2d");
+
+          // Clear canvas
+          ctx.fillStyle = "white";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+          // Calculate aspect ratio to fit image within canvas
+          const scale = Math.min(
+            canvas.width / img.width,
+            canvas.height / img.height
+          );
+          const x = (canvas.width - img.width * scale) / 2;
+          const y = (canvas.height - img.height * scale) / 2;
+
+          ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleGoogleVisionOCR = async () => {
     setIsProcessing(true);
     const canvas = canvasRef.current;
 
     try {
-      // Convert canvas to base64
       const imageData = canvas.toDataURL("image/png").split(",")[1];
 
-      console.log(import.meta.env.VITE_GOOGLE_API_KEY)
-      // Prepare the request to Google Cloud Vision API
-      debugger
       const response = await fetch(
         `https://vision.googleapis.com/v1/images:annotate?key=${VITE_GOOGLE_API_KEY}`,
         {
@@ -203,13 +242,30 @@ const HandwritingToText = () => {
 
       <div className="w-full bg-white rounded-lg shadow-md p-4">
         <div className="flex justify-between mb-4">
-          <button
-            onClick={() => setShowGrid(!showGrid)}
-            className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-            title="Toggle Grid"
-          >
-            <Grid3X3 className="w-5 h-5" />
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowGrid(!showGrid)}
+              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              title="Toggle Grid"
+            >
+              <Grid3X3 className="w-5 h-5" />
+            </button>
+            <button
+              onClick={() => fileInputRef.current.click()}
+              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+              title="Upload Image"
+            >
+              <Upload className="w-5 h-5" />
+              <span>Upload Image</span>
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleImageUpload}
+            />
+          </div>
         </div>
 
         <canvas
@@ -230,14 +286,14 @@ const HandwritingToText = () => {
           <button
             onClick={handleGoogleVisionOCR}
             disabled={isProcessing}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-black font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {isProcessing ? "Converting..." : "Convert to Text"}
           </button>
 
           <button
             onClick={handleClearCanvas}
-            className="px-6 py-2 bg-red-600 hover:bg-red-700 text-black font-semibold rounded-lg transition-colors"
+            className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
           >
             Clear
           </button>
