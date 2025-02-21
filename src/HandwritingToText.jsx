@@ -236,28 +236,31 @@ const HandwritingToText = () => {
 
   return (
     <div className="flex flex-col items-center p-6 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-gray-800">
-        Handwriting to Text Converter
+      <h1 className="text-3xl font-extrabold mb-6 text-gray-800 relative text-center tracking-wide">
+        <span className="bg-gradient-to-r from-blue-500 to-purple-600 text-transparent bg-clip-text">
+          Handwriting to Text Converter
+        </span>
+        <div className="absolute left-1/2 transform -translate-x-1/2 mt-2 w-20 h-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full"></div>
       </h1>
 
       <div className="w-full bg-white rounded-lg shadow-md p-4">
         <div className="flex justify-between mb-4">
           <div className="flex gap-2">
-            <button
+            <div
               onClick={() => setShowGrid(!showGrid)}
-              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="p-2 cursor-pointer bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
               title="Toggle Grid"
             >
               <Grid3X3 className="w-5 h-5" />
-            </button>
-            <button
+            </div>
+            <div
               onClick={() => fileInputRef.current.click()}
-              className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
+              className="p-2 cursor-pointer bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors flex items-center gap-2"
               title="Upload Image"
             >
               <Upload className="w-5 h-5" />
               <span>Upload Image</span>
-            </button>
+            </div>
             <input
               ref={fileInputRef}
               type="file"
@@ -281,21 +284,45 @@ const HandwritingToText = () => {
           onTouchMove={handleMove}
           onTouchEnd={handleEnd}
         />
-
-        <div className="flex justify-center gap-4 mt-6">
+        <div className="flex justify-center gap-6 mt-6">
           <button
             onClick={handleGoogleVisionOCR}
             disabled={isProcessing}
-            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isProcessing ? "Converting..." : "Convert to Text"}
+            {isProcessing ? (
+              <>
+                <svg
+                  className="animate-spin h-5 w-5 text-white"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                  ></circle>
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v8z"
+                  ></path>
+                </svg>
+                <span>Converting...</span>
+              </>
+            ) : (
+              <>🔄 Convert to Text</>
+            )}
           </button>
 
           <button
             onClick={handleClearCanvas}
-            className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors"
+            className="flex items-center gap-2 px-8 py-3 bg-gradient-to-r from-red-500 to-red-700 hover:from-red-600 hover:to-red-800 text-white font-bold rounded-lg shadow-lg transition-all transform hover:scale-105"
           >
-            Clear
+            🗑️ Clear Canvas
           </button>
         </div>
       </div>
